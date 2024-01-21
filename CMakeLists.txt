@@ -2,7 +2,7 @@ cmake_minimum_required( VERSION 3.15)
 
 project( mulle-menu NONE)
 
-execute_process( COMMAND ./mulle-menu version
+execute_process( COMMAND ./mulle-menu --version
                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                  OUTPUT_VARIABLE MULLE_MENU_VERSION
                  OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -47,8 +47,10 @@ Return code:
 Flags:
    --final-title <s>      : set string for final result output ("" to suppress)
    --no-ctrl-c            : do not trap CTRL-C, this disables polling
-   --prefix <c>           : set prefix for unselected options
-   --selection-prefix <c> : set prefix for selected options
+   --option <s>           : you can also add options by an option string
+   --options <s>          : as option, pass multiple options separated by '\n'
+   --prefix <c>           : set prefix for unselected options ("  ")
+   --selection-prefix <c> : set prefix for selected options ("> ")
    --sv-rc                : trust tput sv/rc, which seems to be broken often
    --title <s>            : set string for initial prompt ("" to suppress)
    -n                     : dry run

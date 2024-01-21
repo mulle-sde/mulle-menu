@@ -1,0 +1,439 @@
+#! /usr/bin/env mulle-bash
+# shellcheck shell=bash
+
+[ "${TRACE}" = 'YES' -o "${MULLE_MENU_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+### >> START OF mulle-boot.sh >>
+### << END OF mulle-boot.sh <<
+
+#
+# Versioning of this script
+#
+MULLE_EXECUTABLE_VERSION="0.0.1"
+
+
+### >> START OF mulle-bashfunctions-minimal-embed.sh >>
+### << END OF mulle-bashfunctions-mininal-embed.sh <<
+
+
+print_flags()
+{
+
+   ##
+   cat <<EOF
+   --title <s>            : set string for initial prompt ("" to suppress)
+   --final-title <s>      : set string for final result output ("" to suppress)
+   --prefix <c>           : set prefix for unselected options
+   --selection-prefix <c> : set prefix for selected options
+   --no-ctrl-c            : do not trap CTRL-C
+   --sv-rc                : trust tput sv/rc, which seems to be broken often
+EOF
+
+   options_technical_flags_usage \
+                "                  : "
+}
+
+
+usage()
+{
+   [ $# -ne 0 ] && log_error "$*"
+
+
+   cat <<EOF >&2
+Usage:
+   mulle-menu [flags] <menu-option> ...
+
+   Present a menu on the command line at the current cursor position. The
+   user can then use cursor keys or 'j' 'k' and ENTER to make a selection.
+   The user can press ESC or 'q' to quit the menu. SIGINT (CTRL-C) is also
+   intercepted and treated as a special form of quitting.
+
+   The menu will return immediately, if only a single option is given.
+
+   Do not use redirection when calling mulle-menu. So do not use '<' or '>' on
+   stdin/stdout or use calls like  \$(mulle-menu ...)
+
+Example:
+      mulle-menu VfL Bochum 1848
+Your options are:
+> VfL
+  Bochum
+  1848
+
+Return code:
+   0-127  : index of the chosen option
+   -1/128 : user opted out, did not choose anything
+   -2/129 : user pressed CTRL-C
+   -3/130 : EOF encountred
+   -4/131 : options are empty
+   -5/132 : too many options (128 max)
+
+Flags:
+EOF
+   print_flags | LC_ALL=C sort >&2
+
+   if [ -z "${MULLE_TRACE}" ]
+   then
+   cat <<EOF >&2
+      (use -v flag to see more options)
+EOF
+   fi
+   echo "" >&2
+
+   exit 1
+}
+
+
+
+_r_user_selection_draw_menu()
+{
+   local cur="$1"
+   local max_visi_items="$2"
+   local prefix="$3"
+   local selected_prefix="$4"
+
+   local term_width
+   local term_height
+
+   term_width=$(tput cols)
+   term_height=$(tput lines)
+
+   local max_items
+
+   # Calculate the maximum number of items to display based on terminal height
+   max_items=$(($term_height - 1))
+   if (( max_items > max_visi_items ))
+   then
+      max_items=${max_visi_items}
+   fi
+   if (( max_items > ${#__menu[@]} ))
+   then
+      max_items=${#__menu[@]}
+   fi
+
+   local max_width
+
+   max_width=$(( ${term_width} - 2 ))
+   if (( max_width < 4 ))
+   then
+      max_width=2
+   fi
+
+   local half_window
+
+   half_window=$((max_items / 2))
+
+   local start
+   local end
+
+   start=$((cur - half_window))
+   end=$((cur + half_window))
+
+   if ((start < 0))
+   then
+       start=0
+       end=$((max_items - 1))
+   else
+      if ((end >= ${#__menu[@]}))
+      then
+         end=$(( ${#__menu[@]} - 1 ))
+         start=$((end - max_items + 1))
+     fi
+   fi
+
+   local i
+   local n
+
+   n=0
+   for ((i=start; i<=end; i++)); do
+       if [[ $i -eq $cur ]]; then
+           printf "${selected_prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}"
+       else
+           printf "${prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}";
+       fi
+       n=$(( n + 1 ))
+   done
+
+   RVAL=$n
+}
+
+
+_user_selection_clear_menu()
+{
+   local n="$1"
+
+   # tput cuu$n # no worky in GNOME
+   while [ $n -gt 0 ]
+   do
+      tput cuu1
+      n=$(( n - 1 ))
+   done
+   tput ed
+}
+
+
+# Set trap to call reset_terminal when a Ctrl+C interrupt occurs
+_user_selection_ctrl_c()
+{
+   _user_selection_ctrl_c_pressed='YES'
+
+   # try to restore as much as we know, pretty much voodoo
+   tput sgr0
+   tput rmacs
+   tput rmam
+   tput rmm
+   tput rmkx
+   tput rmpch
+   tput rmso
+   tput rmul
+}
+
+
+#
+# runs in subshell, so we can trap CTRL-C to reset terminal later
+# on
+#
+user_selection_menu_loop()
+(
+   log_entry "user_selection_menu_loop" "$@"
+
+   local max_visi_items="$1"
+   local prefix="$2"
+   local selected_prefix="$3"
+   local mode="$4"
+
+   shift 4
+
+   if [ $# -eq 0 ]
+   then
+      return 131  # -5
+   fi
+
+   if [ $# -eq 1 ]
+   then
+      return 0
+   fi
+
+   if [ $# -gt 128 ]
+   then
+      return 132 # -6
+   fi
+
+   # Use a while loop to read each line of the string
+   local __menu=("$@")
+
+   # remember this cursor place
+   case ",${mode}," in
+      *,sv-rc,*)
+         tput sc    # remember
+      ;;
+   esac
+
+   tput sgr0  # reset a little
+   tput civis # turn off cursor
+
+   local cur=0
+   local n
+
+   _r_user_selection_draw_menu "${cur}" "${max_visi_items}" "${prefix}" "${selected_prefix}"
+   n="${RVAL}"
+
+   _user_selection_ctrl_c_pressed='NO'
+
+   case ",${mode}," in
+      *,no-ctrl-c,*)
+      ;;
+
+      *)
+         trap _user_selection_ctrl_c SIGINT
+      ;;
+   esac
+
+   local key
+   local rc=-128 # never returned
+
+   while [ $rc -eq -128 ]
+   do
+      # poll ever .25s so we can check for CTRL-C
+      while read -sN1 -t 0.2500 key
+      do
+          if [[ "$key" == "" ]]
+          then
+             rc=130   # EOF i guess
+             continue
+          fi
+
+          read -sN1 -t 0.0001 k1; read -sN1 -t 0.0001 k2; read -sN1 -t 0.0001 k3
+          key="${key}${k1}${k2}${k3}"
+
+          case "$key" in
+              i|j|$'\e[A'|$'\e0A'|$'\e[D'|$'\e0D') ((cur > 0)) && ((cur--));;
+              k|l|$'\e[B'|$'\e0B'|$'\e[C'|$'\e0C') ((cur < ${#__menu[@]}-1)) && ((cur++));;
+              $'\n') rc=0; break;;
+              q|''|$'\e') rc=128; break;;
+          esac
+
+          _user_selection_clear_menu "${n}"
+          _r_user_selection_draw_menu "${cur}" "${max_visi_items}" "${prefix}" "${selected_prefix}"
+          n="${RVAL}"
+      done
+
+      if [ "${_user_selection_ctrl_c_pressed}" = 'YES' ]
+      then
+         rc=129
+      fi
+   done
+
+   _user_selection_clear_menu "${n}"
+
+   # hope cursor was properly remembered
+   case ",${mode}," in
+      *,sv-rc,*)
+         tput rc    # just doesnt work usually don't know why
+         tput ed
+      ;;
+   esac
+
+   tput cnorm  # turn on cursor
+
+   return $cur
+)
+
+
+main()
+{
+   local OPTION_TITLE='DEFAULT'
+   local OPTION_FINAL_TITLE='DEFAULT'
+   local OPTION_VISIBLE_ITEMS=7
+   local OPTION_PREFIX="  "
+   local OPTION_SELECTED_PREFIX="${C_GREEN}> "
+   local OPTION_MODE=
+   #
+   # simple flag handling
+   #
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         -f|--force)
+            MULLE_FLAG_MAGNUM_FORCE='YES'
+         ;;
+
+         -h*|--help|help)
+            usage
+         ;;
+
+         --title)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_TITLE="$1"
+         ;;
+
+         --final-title)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_FINAL_TITLE="$1"
+         ;;
+
+         --selected-prefix)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_SELECTED_PREFIX="$1"
+         ;;
+
+         --option-prefix)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_PREFIX="$1"
+         ;;
+
+         -n|--visible-items)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_VISIBLE_ITEMS="$1"
+         ;;
+
+         --no-ctrl-c|--sv-rc)
+            r_comma_concat "${OPTION_MODE}" "${1:2}"
+            OPTION_MODE="${RVAL}"
+         ;;
+
+         --version)
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+
+         --)
+            shift
+            break
+         ;;
+
+         -*)
+            usage "Unknown flag \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE:-}" && set -x
+
+   local title
+
+   if ! [ -z "${OPTION_TITLE}" ]
+   then
+      title="${OPTION_TITLE}"
+      if [ "${title}" = 'DEFAULT' ]
+      then
+         title="Your options are:"
+      fi
+      printf "%s\n" "${title}"
+   fi
+
+   local i
+
+   user_selection_menu_loop  "${OPTION_VISIBLE_ITEMS:-7}" \
+                             "${OPTION_PREFIX}" \
+                             "${OPTION_SELECTED_PREFIX}" \
+                             "${OPTION_MODE}" \
+                             "$@"
+   i=$?
+
+   # erase title
+   if [ ! -z "${OPTION_TITLE}" ]
+   then
+      tput cuu1
+      tput ed
+   fi
+
+   if [ $i -ge 0 -a ! -z "${OPTION_FINAL_TITLE}" ]
+   then
+      title="${OPTION_FINAL_TITLE}"
+      if [ "${title}" = 'DEFAULT' ]
+      then
+         title="Your choice: "
+      fi
+
+      local menu=("$@")
+
+      printf "%s%s\n" "${title}" "${menu[$i]}"
+   fi
+   return $i
+}
+
+
+call_with_flags "main" "$@"

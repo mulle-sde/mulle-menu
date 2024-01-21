@@ -1,0 +1,12 @@
+{
+   project =
+   {
+      description="🍟 A menu for your bash scripts";
+      domain="github";
+      name="mulle-menu";
+      username="mulle-sde";
+      reponame="mulle-menu";
+      homepage="https://github.com/mulle-sde/mulle-menu";
+      license="BSD-3-Clause"
+   };
+}

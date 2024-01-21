@@ -1,0 +1,5 @@
+Presents a menu for the user to pick an option from. A nice feature to add
+to your shell scripts, that need some interaction from the user.
+
+![GIF](opti.gif)
+

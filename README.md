@@ -3,7 +3,7 @@
 ... for Android, BSDs, Linux, macOS, SunOS, Windows (MinGW, WSL)
 
 Presents a menu for the user to pick an option from. A nice feature to add
-to your shell scripts, that need some interaction from the user.
+to your shell scripts, that need some interaction with the user.
 
 ![GIF](opti.gif)
 
@@ -46,7 +46,7 @@ Return code:
 
 Flags:
    --final-title <s>      : set string for final result output ("" to suppress)
-   --no-ctrl-c            : do not trap CTRL-C
+   --no-ctrl-c            : do not trap CTRL-C, this disables polling
    --prefix <c>           : set prefix for unselected options
    --selection-prefix <c> : set prefix for selected options
    --sv-rc                : trust tput sv/rc, which seems to be broken often

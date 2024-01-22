@@ -1,0 +1,11 @@
+## Info
+
+[mulle-menu](https://raw.githubusercontent.com/mulle-sde/mulle-menu/release/mulle-menu) is a one-file script that starts as `/bin/sh`, but needs either
+zsh or bash to work. The script requires the [tput](https://www.mankier.com/1p/tput) command to be available, which is POSIX.
+
+> #### Unembed mulle-bashfunctions
+>
+> If you have [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions)
+> installed, you can slim the script down drastically, by using
+> `mulle-bashfunctions unembed < mulle-menu > mulle-menu.slim`.
+>

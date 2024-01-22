@@ -53,6 +53,7 @@ Flags:
    --selection-prefix <c> : set prefix for selected options ("> ")
    --sv-rc                : trust tput sv/rc, which seems to be broken often
    --title <s>            : set string for initial prompt ("" to suppress)
+   --visible-items <n>    : number of items to present at once (7)
    -n                     : dry run
    -s                     : be silent
    -v                     : be verbose (increase with -vv, -vvv)
@@ -62,6 +63,17 @@ Flags:
 
 
 
+## Info
+
+[mulle-menu](https://raw.githubusercontent.com/mulle-sde/mulle-menu/release/mulle-menu) is a one-file script that starts as `/bin/sh`, but needs either
+zsh or bash to work. The script requires the [tput](https://www.mankier.com/1p/tput) command to be available, which is POSIX.
+
+> #### Unembed mulle-bashfunctions
+>
+> If you have [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions)
+> installed, you can slim the script down drastically, by using
+> `mulle-bashfunctions unembed < mulle-menu > mulle-menu.slim`.
+>
 
 
 

@@ -2781,14 +2781,15 @@ print_flags()
 
    ##
    cat <<EOF
-   --title <s>            : set string for initial prompt ("" to suppress)
    --final-title <s>      : set string for final result output ("" to suppress)
+   --no-ctrl-c            : do not trap CTRL-C, this disables polling
    --option <s>           : you can also add options by an option string
    --options <s>          : as option, pass multiple options separated by '\\n'
    --prefix <c>           : set prefix for unselected options ("  ")
    --selection-prefix <c> : set prefix for selected options ("> ")
-   --no-ctrl-c            : do not trap CTRL-C, this disables polling
    --sv-rc                : trust tput sv/rc, which seems to be broken often
+   --title <s>            : set string for initial prompt ("" to suppress)
+   --visible-items <n>    : number of items to present at once (7)
 EOF
 
    options_technical_flags_usage \
@@ -2874,11 +2875,18 @@ _r_user_selection_draw_menu()
    fi
 
    local max_width
+   local max_selected_width
 
-   max_width=$(( ${term_width} - 2 ))
+   max_selected_width=$(( ${term_width} - ${#selected_prefix} ))
+   if (( max_selected_width < 4 ))
+   then
+      max_selected_width=4
+   fi
+
+   max_width=$(( ${term_width} - ${#prefix} ))
    if (( max_width < 4 ))
    then
-      max_width=2
+      max_width=4
    fi
 
    local half_window
@@ -2909,7 +2917,7 @@ _r_user_selection_draw_menu()
    n=0
    for ((i=start; i<=end; i++)); do
        if [[ $i -eq $cur ]]; then
-           printf "${selected_prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}"
+           printf "${selected_prefix}%.*s${C_RESET}\n" "${max_selected_width}" "${__menu[$i]}"
        else
            printf "${prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}";
        fi
@@ -2939,15 +2947,9 @@ _user_selection_ctrl_c()
 {
    _user_selection_ctrl_c_pressed='YES'
 
-   # try to restore as much as we know, pretty much voodoo
+   # try to restore something
    tput sgr0
    tput rmacs
-   tput rmam
-   tput rmm
-   tput rmkx
-   tput rmpch
-   tput rmso
-   tput rmul
 }
 
 
@@ -2965,28 +2967,37 @@ user_selection_menu_loop()
    local mode="$4"
    local options="$5"
 
-   if [ $# -eq 0 ]
+   # Use a while loop to read each line of the string
+   local __menu=()
+   local option
+
+   .foreachline option in ${options}
+   .do
+      if [ ! -z "${option}" ]
+      then
+         __menu+=("$option")
+      else
+         log_warning "Empty line in menu options"
+      fi
+   .done
+
+   if [ "${#__menu[@]}" -eq 0 ]
    then
+      log_warning "Empty menu"
       return 131  # -5
    fi
 
-   if [ $# -eq 1 ]
+   if [ "${#__menu[@]}" -eq 1 ]
    then
       return 0
    fi
 
-   if [ $# -gt 128 ]
+   if [ "${#__menu[@]}" -gt 128 ]
    then
+      log_warning "Menu is too large"
       return 132 # -6
    fi
 
-   # Use a while loop to read each line of the string
-   local __menu=()
-   local option
-   .foreachline option in ${options}
-   .do
-      __menu+=("$option")
-   .done
 
    # remember this cursor place
    case ",${mode}," in
@@ -2996,6 +3007,7 @@ user_selection_menu_loop()
    esac
 
    tput sgr0  # reset a little
+   tput rmacs
    tput civis # turn off cursor
 
    local cur=0
@@ -3065,6 +3077,7 @@ user_selection_menu_loop()
    esac
 
    tput cnorm  # turn on cursor
+   tput rmacs
 
    return $cur
 )
@@ -3202,23 +3215,25 @@ main()
                              "${OPTIONS}"
    i=$?
 
-   # erase title
-   if [ ! -z "${OPTION_TITLE}" ]
+   if [ $i -le 128 ]
    then
-      tput cuu1
-      tput ed
-   fi
-
-   if [ $i -ge 0 -a ! -z "${OPTION_FINAL_TITLE}" ]
-   then
-      title="${OPTION_FINAL_TITLE}"
-      if [ "${title}" = 'DEFAULT' ]
+      if [ ! -z "${OPTION_TITLE}" ]
       then
-         title="Your choice: "
+         tput cuu1
+         tput ed
       fi
 
-      r_line_at_index "${OPTIONS}" "$i"
-      printf "%b%b\n" "${title}" "${RVAL}"
+      if [ ! -z "${OPTION_FINAL_TITLE}" ]
+      then
+         title="${OPTION_FINAL_TITLE}"
+         if [ "${title}" = 'DEFAULT' ]
+         then
+            title="Your choice: "
+         fi
+
+         r_line_at_index "${OPTIONS}" "$i"
+         printf "%b%b\n" "${title}" "${RVAL}"
+      fi
    fi
    return $i
 }

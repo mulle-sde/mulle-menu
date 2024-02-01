@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.1.0"
+MULLE_EXECUTABLE_VERSION="0.1.1"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -95,6 +95,11 @@ _r_user_selection_draw_menu()
    local max_visi_items="$2"
    local prefix="$3"
    local selected_prefix="$4"
+
+   if [ ${ZSH_VERSION+x} ]
+   then
+      setopt local_options KSH_ARRAYS
+   fi
 
    local term_width
    local term_height
@@ -194,6 +199,7 @@ _user_selection_ctrl_c()
 }
 
 
+
 #
 # runs in subshell, so we can trap CTRL-C to reset terminal later
 # on
@@ -280,11 +286,20 @@ user_selection_menu_loop()
 
    local key
    local rc=-128 # never returned
+   local readflags
+
+   if [ ${ZSH_VERSION+x} ]
+   then
+      readflags="-k1"
+      stty -echo
+   else
+      readflags="-s -N1"
+   fi
 
    while [ $rc -eq -128 ]
    do
       # poll every .25s if we need to check for CTRL-C
-      while read -sN1 ${timeout} key
+      while read ${readflags} ${timeout} key
       do
           if [[ "$key" == "" ]]
           then
@@ -292,8 +307,13 @@ user_selection_menu_loop()
              continue
           fi
 
-          read -sN1 -t 0.0001 k1; read -sN1 -t 0.0001 k2; read -sN1 -t 0.0001 k3
+          k1=
+          k2=
+          k3=
+          read ${readflags} -t 0.0001 k1; read ${readflags} -t 0.0001 k2; read ${readflags} -t 0.0001 k3
           key="${key}${k1}${k2}${k3}"
+
+          log_debug "key: ${key}"
 
           case "$key" in
               i|j|$'\e[A'|$'\e0A'|$'\e[D'|$'\e0D') ((cur > 0)) && ((cur--));;
@@ -312,6 +332,11 @@ user_selection_menu_loop()
          rc=130
       fi
    done
+
+   if [ ${ZSH_VERSION+x} ]
+   then
+      stty echo
+   fi
 
    _user_selection_clear_menu "${n}"
 

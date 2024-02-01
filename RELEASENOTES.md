@@ -1,3 +1,7 @@
+### 0.1.1
+
+* fixes for zsh
+
 ## 0.1.0
 
 * changed return codes to not clash with some bash return codes

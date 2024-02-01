@@ -17,5 +17,10 @@ LANGUAGE="bash"             # c,cpp, objc, bash ...
 # DEPENDENCIES and BUILD_DEPENDENCIES will be evaled later!
 # So keep them single quoted.
 #
+DEPENDENCIES='${MULLE_NAT_TAP}mulle-bashfunctions
+'
+
+DEBIAN_DEPENDENCIES="mulle-bashfunctions (>= 6.0.0)"
+
 
 

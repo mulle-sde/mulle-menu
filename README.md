@@ -37,12 +37,12 @@ Your options are:
   1848
 
 Return code:
-   0-127  : index of the chosen option
-   -1/128 : user opted out, did not choose anything
-   -2/129 : user pressed CTRL-C
-   -3/130 : EOF encountred
-   -4/131 : options are empty
-   -5/132 : too many options (128 max)
+   0-125  : index of the chosen option
+   128    : user opted out, did not choose anything
+   130    : user pressed CTRL-C
+   131    : options are empty
+   132    : too many options (128 max)
+   141    : EOF encountred
 
 Flags:
    --final-title <s>      : set string for final result output ("" to suppress)
@@ -50,30 +50,23 @@ Flags:
    --option <s>           : you can also add options by an option string
    --options <s>          : as option, pass multiple options separated by '\n'
    --prefix <c>           : set prefix for unselected options ("  ")
+   --select <row>         : pre-select another row than 0
    --selection-prefix <c> : set prefix for selected options ("> ")
    --sv-rc                : trust tput sv/rc, which seems to be broken often
    --title <s>            : set string for initial prompt ("" to suppress)
    --visible-items <n>    : number of items to present at once (7)
+   -ld                    : additional debug output
+   -le                    : additional environment debug output
+   -lt                    : trace through bash code
+   -lx                    : external command execution log output
    -n                     : dry run
    -s                     : be silent
    -v                     : be verbose (increase with -vv, -vvv)
-      (use -v flag to see more options)
 
 ```
 
 
 
-## Info
-
-[mulle-menu](https://raw.githubusercontent.com/mulle-sde/mulle-menu/release/mulle-menu) is a one-file script that starts as `/bin/sh`, but needs either
-zsh or bash to work. The script requires the [tput](https://www.mankier.com/1p/tput) command to be available, which is POSIX.
-
-> #### Unembed mulle-bashfunctions
->
-> If you have [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions)
-> installed, you can slim the script down drastically, by using
-> `mulle-bashfunctions unembed < mulle-menu > mulle-menu.slim`.
->
 
 
 

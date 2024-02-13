@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.1.1"
+MULLE_EXECUTABLE_VERSION="0.1.2"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -161,13 +161,15 @@ _r_user_selection_draw_menu()
    local n
 
    n=0
-   for ((i=start; i<=end; i++)); do
-       if [[ $i -eq $cur ]]; then
-           printf "${selected_prefix}%.*s${C_RESET}\n" "${max_selected_width}" "${__menu[$i]}"
-       else
-           printf "${prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}";
-       fi
-       n=$(( n + 1 ))
+   for ((i=start; i<=end; i++))
+   do
+      if [[ $i -eq $cur ]]
+      then
+         printf "${selected_prefix}%.*s${C_RESET}\n" "${max_selected_width}" "${__menu[$i]}"
+      else
+         printf "${prefix}%.*s${C_RESET}\n" "${max_width}" "${__menu[$i]}";
+      fi
+      n=$(( n + 1 ))
    done
 
    RVAL=$n
@@ -350,6 +352,11 @@ user_selection_menu_loop()
 
    tput cnorm  # turn on cursor
    tput rmacs
+
+   if [ $rc -ne 0 ]
+   then
+      return $rc
+   fi
 
    return $cur
 )

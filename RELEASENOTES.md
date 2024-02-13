@@ -1,3 +1,7 @@
+### 0.1.2
+
+* fix return code on quit (and other non-selections)
+
 ### 0.1.1
 
 * fixes for zsh

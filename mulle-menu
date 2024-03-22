@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.1.2"
+MULLE_EXECUTABLE_VERSION="0.2.0"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -22,6 +22,7 @@ print_flags()
    ##
    cat <<EOF
    --final-title <s>      : set string for final result output ("" to suppress)
+   --gui                  : use zenity GUI for menu display
    --no-ctrl-c            : do not trap CTRL-C, this disables polling
    --option <s>           : you can also add options by an option string
    --options <s>          : as option, pass multiple options separated by '\\n'
@@ -362,6 +363,69 @@ user_selection_menu_loop()
 )
 
 
+zenity_menu()
+{
+   log_entry "zenity_menu" "$@"
+
+   local max_visi_items="$1"
+   local select="${2:-1}"
+   local title="$3"
+   local options="$4"
+
+   if ! ZENITY="${ZENITY:-`which zenity`}"
+   then
+      fail "Need zenity installed for GUI chooser (GNOME,https://github.com/ncruces/zenity)"
+   fi
+
+   local cmdline
+   local height=$(( 200 + max_visi_items * 20 ))  # pi mal daumen
+   
+   cmdline="zenity --list \
+ --width='300' \
+ --height='${height}' \
+ --radiolist \
+ --title '${title}' \
+ --column 'Select' \
+ --column 'Name'"
+
+   local option
+   local index 
+
+   index=0
+   .foreachline option in ${options}
+   .do
+      if [ "${index}" = "${select}" ]
+      then
+         r_concat "${cmdline}" "TRUE \"${option}\""
+      else
+         r_concat "${cmdline}" "FALSE \"${option}\""
+      fi
+      cmdline="${RVAL}"
+      index=$(( index + 1 ))
+   .done
+
+   local choice 
+
+   if ! choice="`eval_rexekutor "${cmdline}"`"
+   then
+      return 130
+   fi
+
+   index=0
+   .foreachline option in ${options}
+   .do
+      if [ "${option}" = "${choice}" ]
+      then
+         return $index
+      fi
+      index=$(( index + 1 ))
+   .done
+
+   return 141 # ???
+}
+
+
+
 main()
 {
    local OPTION_TITLE='DEFAULT'
@@ -371,6 +435,7 @@ main()
    local OPTION_SELECTED_PREFIX="${C_GREEN}> "
    local OPTION_SELECT=0
    local OPTION_MODE=
+   local OPTION_GUI=
    local OPTIONS=
 
    #
@@ -405,6 +470,10 @@ main()
             shift
 
             OPTION_FINAL_TITLE="$1"
+         ;;
+
+         --gui)
+            OPTION_GUI='YES'
          ;;
 
          --select)
@@ -481,15 +550,29 @@ main()
       OPTIONS="${RVAL}"
    done
 
-   local title
+   local title 
 
    if ! [ -z "${OPTION_TITLE}" ]
    then
-      title="${OPTION_TITLE}"
-      if [ "${title}" = 'DEFAULT' ]
+      title=${OPTION_TITLE}
+      if [ "${OPTION_TITLE}" = 'DEFAULT' ]
       then
          title="Your options are:"
       fi
+   fi
+
+   if [ "${OPTION_GUI}" = 'YES' ]
+   then
+      zenity_menu "${OPTION_VISIBLE_ITEMS:-7}" \
+                  "${OPTION_SELECT}" \
+                  "${title}" \
+                  "${OPTIONS}"
+      return $?
+   fi
+
+
+   if ! [ -z "${title}" ]
+   then
       printf "%b\n" "${title}"
    fi
 
@@ -520,7 +603,9 @@ main()
          fi
 
          r_line_at_index "${OPTIONS}" "$i"
-         printf "%b%b\n" "${title}" "${RVAL}"
+         printf "%b%b" "${title}" "${RVAL}"
+         tput el  # clear to end of line for mac
+         printf "\n"
       fi
    fi
    return $i

@@ -1,9 +1,9 @@
 cmake_minimum_required( VERSION 3.15)
 
-project( mulle-menu NONE)
+project( mulle-menu VERSION 0.2.0 LANGUAGES NONE)
 
 execute_process( COMMAND ./mulle-menu --version
-                 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                  OUTPUT_VARIABLE MULLE_MENU_VERSION
                  OUTPUT_STRIP_TRAILING_WHITESPACE)
 message( STATUS "MULLE_MENU_VERSION is ${MULLE_MENU_VERSION} according to mulle-menu")

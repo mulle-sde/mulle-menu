@@ -1,3 +1,9 @@
+## 0.2.0
+
+
+* mulle-menu has now a --gui option, that will use 'zenity' instead of the terminal to query for values. This can be useful to make scripts triggered by an IDE interactive
+
+
 ### 0.1.2
 
 * fix return code on quit (and other non-selections)

@@ -1,3 +1,8 @@
+## 0.3.0
+
+* add a crude search possibility for longer menus
+
+
 ## 0.2.0
 
 

@@ -9,12 +9,11 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.3.0"
+MULLE_EXECUTABLE_VERSION="0.3.1"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
 ### << END OF mulle-bashfunctions-minimal-embed.sh <<
-
 
 print_flags()
 {
@@ -217,7 +216,7 @@ _find_menu_item_by_char()
    local i
    local item
    local first_char
-   local found_index=-1
+   local exact_match=-1
    local next_index=-1
 
    # Convert search_char to lowercase if not case sensitive
@@ -226,8 +225,8 @@ _find_menu_item_by_char()
       search_char=$(echo "$search_char" | tr '[:upper:]' '[:lower:]')
    fi
 
-   # First try to find items starting from current position + 1
-   for ((i=current_pos+1; i<${#__menu[@]}; i++))
+   # First try to find exact match
+   for ((i=0; i<${#__menu[@]}; i++))
    do
       item="${__menu[$i]}"
       first_char="${item:0:1}"
@@ -240,47 +239,24 @@ _find_menu_item_by_char()
 
       if [ "$first_char" = "$search_char" ]
       then
-         found_index=$i
+         exact_match=$i
          break
-      elif [ "$first_char" > "$search_char" ] && [ $next_index -eq -1 ]
+      elif [ "$first_char" \> "$search_char" ] && [ $next_index -eq -1 ]
       then
          next_index=$i
       fi
    done
 
-   # If not found after current position, search from beginning
-   if [ $found_index -eq -1 ]
+   # If we found an exact match, use that
+   if [ $exact_match -ne -1 ]
    then
-      for ((i=0; i<=current_pos; i++))
-      do
-         item="${__menu[$i]}"
-         first_char="${item:0:1}"
-
-         # Convert to lowercase if not case sensitive
-         if [ "${case_sensitive}" = "NO" ]
-         then
-            first_char=$(echo "$first_char" | tr '[:upper:]' '[:lower:]')
-         fi
-
-         if [ "$first_char" = "$search_char" ]
-         then
-            found_index=$i
-            break
-         elif [ "$first_char" > "$search_char" ] && [ $next_index -eq -1 ]
-         then
-            next_index=$i
-         fi
-      done
-   fi
-
-   # Return the found index, or the next alphabetical index, or current position
-   if [ $found_index -ne -1 ]
-   then
-      RVAL=$found_index
+      RVAL=$exact_match
+   # Otherwise if we found a next higher item, use that
    elif [ $next_index -ne -1 ]
    then
       RVAL=$next_index
    else
+      # If no match found, stay at current position
       RVAL=$current_pos
    fi
 }

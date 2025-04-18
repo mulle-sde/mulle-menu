@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.3.1"
+MULLE_EXECUTABLE_VERSION="0.4.0"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -47,11 +47,10 @@ Usage:
    mulle-menu [flags] <menu-option> ...
 
    Present a menu on the command line at the current cursor position. The
-   user can then use cursor keys or 'j' 'k' and ENTER to make a selection.
-   The user can press ESC or 'q' to quit the menu. SIGINT (CTRL-C) is also
-   intercepted and treated as a special form of quitting. You can use the
-   other keys to search forward. Use SHIFT to search for menu items starting
-   with 'j', 'k', 'q'.
+   user can then use cursor keys or SHIFT-'J' SHIFT-'K' and ENTER to make a
+   selection. The user can press ESC or SHIFT-'Q' to quit the menu.
+   SIGINT (CTRL-C) is also intercepted and treated as a special form of
+   quitting. You can use the other keys to search forward.
 
    The menu will return immediately, if only a single option is given.
 
@@ -379,10 +378,10 @@ user_selection_menu_loop()
           log_debug "key: ${key}"
 
           case "$key" in
-              i|j|$'\e[A'|$'\e0A'|$'\e[D'|$'\e0D') ((cur > 0)) && ((cur--));;
-              k|l|$'\e[B'|$'\e0B'|$'\e[C'|$'\e0C') ((cur < ${#__menu[@]}-1)) && ((cur++));;
+              J|$'\e[A'|$'\e0A'|$'\e[D'|$'\e0D') ((cur > 0)) && ((cur--));;
+              K|$'\e[B'|$'\e0B'|$'\e[C'|$'\e0C') ((cur < ${#__menu[@]}-1)) && ((cur++));;
               $'\n') rc=0; break;;
-              q|''|$'\e') rc=128; break;;
+              Q|''|$'\e') rc=128; break;;
 
               # Search functionality - only if enabled
               [a-zA-Z0-9\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\;\'\,\.\/\:\"\\])

@@ -1,3 +1,10 @@
+## 0.4.0
+
+* changed control scheme to SHIFT-J/SHIFT-K/SHIFT-Q, which I don' really use anyway since my keyboard as cursor keys and an escape key, now searches don't preempt strangely
+
+* dial up to next menu item if starting char is missing
+
+
 ## 0.3.0
 
 * add a crude search possibility for longer menus

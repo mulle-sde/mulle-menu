@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.4.0"
+MULLE_EXECUTABLE_VERSION="0.4.1"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -385,12 +385,16 @@ user_selection_menu_loop()
 
               # Search functionality - only if enabled
               [a-zA-Z0-9\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\;\'\,\.\/\:\"\\])
-                  if [ "${mode}" != *no-search* ]
-                  then
+                  case ",${mode}," in
+                     *,no-search,*)
+                     ;;
+
+                     *)
                       _find_menu_item_by_char "$key" "$cur" "NO"
                       cur=$RVAL
-                  fi
-                  ;;
+                     ;;
+                  esac
+               ;;
           esac
 
           _user_selection_clear_menu "${n}"
@@ -406,7 +410,7 @@ user_selection_menu_loop()
 
    if [ ${ZSH_VERSION+x} ]
    then
-      stty echo
+      stty 'echo'
    fi
 
    _user_selection_clear_menu "${n}"
@@ -414,13 +418,13 @@ user_selection_menu_loop()
    # hope cursor was properly remembered
    case ",${mode}," in
       *,sv-rc,*)
-         tput rc    # just doesnt work usually don't know why
-         tput ed
+         tput 'rc'    # just doesnt work usually don't know why
+         tput 'ed'
       ;;
    esac
 
-   tput cnorm  # turn on cursor
-   tput rmacs
+   tput 'cnorm'  # turn on cursor
+   tput 'rmacs'
 
    if [ $rc -ne 0 ]
    then
@@ -456,11 +460,15 @@ zenity_menu()
  --title '${title}'"
 
    # Only add text if search is enabled, but don't use search-column option
-   if [[ "$mode" != *no-search* ]]
-   then
-      r_concat "${cmdline}" " --text 'Type to search'"
-      cmdline="${RVAL}"
-   fi
+   case ",$mode;" in
+      *,no-search,*)
+      ;;
+
+      *)
+         r_concat "${cmdline}" " --text 'Type to search'"
+         cmdline="${RVAL}"
+      ;;
+   esac
 
    r_concat "${cmdline}" " --column 'Select' \
  --column 'Name'"
@@ -509,7 +517,6 @@ main()
    local OPTION_FINAL_TITLE='DEFAULT'
    local OPTION_VISIBLE_ITEMS=7
    local OPTION_PREFIX="  "
-   local OPTION_SEARCH='YES'
    local OPTION_SELECTED_PREFIX="${C_GREEN}> "
    local OPTION_SELECT=0
    local OPTION_MODE=
@@ -590,13 +597,9 @@ main()
             OPTION_VISIBLE_ITEMS="$1"
          ;;
 
-         --no-ctrl-c|--sv-rc)
+         --no-ctrl-c|--sv-rc|--no-search)
             r_comma_concat "${OPTION_MODE}" "${1:2}"
             OPTION_MODE="${RVAL}"
-         ;;
-
-         --no-search)
-            OPTION_SEARCH='NO'
          ;;
 
          --version)
@@ -622,6 +625,9 @@ main()
    done
 
    options_setup_trace "${MULLE_TRACE:-}" && set -x
+
+   # override mulle-bashfunctions logging resetter to use proper rc
+   trap 'logging_reset ; exit 130' TERM INT
 
    local option
 
@@ -660,12 +666,6 @@ main()
    fi
 
    local i
-
-   if [ "${OPTION_SEARCH}" = 'NO' ]
-   then
-      r_comma_concat "${OPTION_MODE}" "no-search"
-      OPTION_MODE="${RVAL}"
-   fi
 
    user_selection_menu_loop  "${OPTION_VISIBLE_ITEMS:-7}" \
                              "${OPTION_SELECT}" \

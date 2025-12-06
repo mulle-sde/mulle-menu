@@ -22,6 +22,7 @@ print_flags()
    --gui                  : use zenity GUI for menu display
    --no-ctrl-c            : do not trap CTRL-C, this disables polling
    --no-search            : disable search functionality when typing characters
+   --enable-single-choice : do not shortcut single option
    --option <s>           : you can also add options by an option string
    --options <s>          : as option, pass multiple options separated by '\\n'
    --prefix <c>           : set prefix for unselected options ("  ")
@@ -283,30 +284,8 @@ user_selection_menu_loop()
 
    .foreachline option in ${options}
    .do
-      if [ ! -z "${option}" ]
-      then
-         __menu+=("$option")
-      else
-         log_warning "Empty line in menu options"
-      fi
+      __menu+=("$option")
    .done
-
-   if [ "${#__menu[@]}" -eq 0 ]
-   then
-      log_warning "Empty menu"
-      return 131  # -5
-   fi
-
-   if [ "${#__menu[@]}" -eq 1 ]
-   then
-      return 0
-   fi
-
-   if [ "${#__menu[@]}" -gt 128 ]
-   then
-      log_warning "Menu is too large"
-      return 132 # -6
-   fi
 
 
    # remember this cursor place
@@ -519,6 +498,7 @@ main()
    local OPTION_PREFIX="  "
    local OPTION_SELECTED_PREFIX="${C_GREEN}> "
    local OPTION_SELECT=0
+   local OPTION_SINGLE_OPTION='NO'
    local OPTION_MODE=
    local OPTION_GUI=
    local OPTIONS=
@@ -548,6 +528,14 @@ main()
             shift
 
             OPTION_TITLE="$1"
+         ;;
+
+         --enable-single-option|--single-option)
+            OPTION_SINGLE_OPTION='YES'
+         ;;
+
+         --disable-single-option|--no-single-option)
+            OPTION_SINGLE_OPTION='NO'
          ;;
 
          --final-title)
@@ -585,6 +573,11 @@ main()
          --option|--options)
             [ $# -eq 1 ] && usage "missing argument to $1"
             shift
+
+            if [ -z "$1" ]
+            then
+               continue
+            fi
 
             r_add_line "${OPTION}" "$1"
             OPTIONS="${RVAL}"
@@ -630,13 +623,39 @@ main()
    trap 'logging_reset ; exit 130' TERM INT
 
    local option
+   local count
 
    # collect all options together (usually its either or)
    for option in "$@"
    do
+      if [ -z "${option}" ]
+      then
+         continue
+      fi
+
       r_add_line "${OPTIONS}" "${option}"
       OPTIONS="${RVAL}"
    done
+
+   r_count_lines "${OPTIONS}"
+   count="${RVAL}"
+
+   if [ "${count}" -gt 128 ]
+   then
+      log_warning "Menu is too large"
+      return 132 # -6
+   fi
+
+   if [ "${count}" -eq 0 ]
+   then
+      log_warning "Empty menu"
+      return 131  # -5
+   fi
+
+   if [ "${count}" -eq 1 -a "${OPTION_SINGLE_OPTION}" = 'NO' ]
+   then
+      return 0
+   fi
 
    local title 
 

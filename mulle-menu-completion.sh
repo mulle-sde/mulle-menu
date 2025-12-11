@@ -6,10 +6,16 @@ _mulle_menu_complete()
     # List of all options
     local options=(
         -f --force
-        -h --help --title --enable-single-option --single-option
-        --disable-single-option --no-single-option --final-title --gui
-        --select --selected-prefix --option-prefix --option --options
-        -n --visible-items --no-ctrl-c --sv-rc --no-search --version
+        -h --help
+        --title --final-title
+        --enable-single-option --single-option
+        --disable-single-option --no-single-option
+        --gui
+        --select --selected-prefix --option-prefix
+        --option --options
+        -n --visible-items
+        --no-ctrl-c --sv-rc --no-search
+        --version
     )
 
     # Check if previous word is an option that takes an argument

@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.4.1"
+MULLE_EXECUTABLE_VERSION="0.4.2"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>

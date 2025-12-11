@@ -20,9 +20,10 @@ Usage:
    mulle-menu [flags] <menu-option> ...
 
    Present a menu on the command line at the current cursor position. The
-   user can then use cursor keys or 'j' 'k' and ENTER to make a selection.
-   The user can press ESC or 'q' to quit the menu. SIGINT (CTRL-C) is also
-   intercepted and treated as a special form of quitting.
+   user can then use cursor keys or SHIFT-'J' SHIFT-'K' and ENTER to make a
+   selection. The user can press ESC or SHIFT-'Q' to quit the menu.
+   SIGINT (CTRL-C) is also intercepted and treated as a special form of
+   quitting. You can use the other keys to search forward.
 
    The menu will return immediately, if only a single option is given.
 
@@ -45,8 +46,11 @@ Return code:
    141    : EOF encountred
 
 Flags:
+   --enable-single-choice : do not shortcut single option
    --final-title <s>      : set string for final result output ("" to suppress)
+   --gui                  : use zenity GUI for menu display
    --no-ctrl-c            : do not trap CTRL-C, this disables polling
+   --no-search            : disable search functionality when typing characters
    --option <s>           : you can also add options by an option string
    --options <s>          : as option, pass multiple options separated by '\n'
    --prefix <c>           : set prefix for unselected options ("  ")

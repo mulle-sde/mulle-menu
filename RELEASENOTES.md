@@ -1,3 +1,8 @@
+## 0.5.0
+
+* add --timeout `<s>` option for AI support
+
+
 ## 0.4.0
 
 * changed control scheme to SHIFT-J/SHIFT-K/SHIFT-Q, which I don' really use anyway since my keyboard as cursor keys and an escape key, now searches don't preempt strangely

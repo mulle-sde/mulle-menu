@@ -9,7 +9,7 @@
 #
 # Versioning of this script
 #
-MULLE_EXECUTABLE_VERSION="0.4.2"
+MULLE_EXECUTABLE_VERSION="0.5.0"
 
 
 ### >> START OF mulle-bashfunctions-minimal-embed.sh >>
@@ -29,6 +29,7 @@ print_flags()
    --select <row>         : pre-select another row than 0
    --selection-prefix <c> : set prefix for selected options ("> ")
    --sv-rc                : trust tput sv/rc, which seems to be broken often
+   --timeout <n>          : auto-select first option after n seconds
    --title <s>            : set string for initial prompt ("" to suppress)
    --visible-items <n>    : number of items to present at once (7)
 EOF
@@ -277,6 +278,7 @@ user_selection_menu_loop()
    local selected_prefix="$4"
    local mode="$5"
    local options="$6"
+   local user_timeout="$7"
 
    # Use a while loop to read each line of the string
    local __menu=()
@@ -313,6 +315,14 @@ user_selection_menu_loop()
    _user_selection_ctrl_c_pressed='NO'
 
    local timeout
+   local timeout_counter=0
+   local timeout_limit=0
+
+   # Calculate timeout limit if user specified timeout
+   if [ ! -z "${user_timeout}" ]
+   then
+      timeout_limit=$((user_timeout * 4))  # 4 iterations per second (0.25s each)
+   fi
 
    case ",${mode}," in
       *,no-ctrl-c,*)
@@ -380,6 +390,17 @@ user_selection_menu_loop()
           _r_user_selection_draw_menu "${cur}" "${max_visi_items}" "${prefix}" "${selected_prefix}"
           n="${RVAL}"
       done
+
+      # Check for user-specified timeout
+      if [ ! -z "${user_timeout}" ] && [ ${timeout_limit} -gt 0 ]
+      then
+         timeout_counter=$((timeout_counter + 1))
+         if [ ${timeout_counter} -ge ${timeout_limit} ]
+         then
+            rc=${selected}  # Return the pre-selected option
+            break
+         fi
+      fi
 
       if [ "${_user_selection_ctrl_c_pressed}" = 'YES' ]
       then
@@ -501,6 +522,7 @@ main()
    local OPTION_SINGLE_OPTION='NO'
    local OPTION_MODE=
    local OPTION_GUI=
+   local OPTION_TIMEOUT=
    local OPTIONS=
 
    #
@@ -593,6 +615,13 @@ main()
          --no-ctrl-c|--sv-rc|--no-search)
             r_comma_concat "${OPTION_MODE}" "${1:2}"
             OPTION_MODE="${RVAL}"
+         ;;
+
+         --timeout)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            OPTION_TIMEOUT="$1"
          ;;
 
          --version)
@@ -691,7 +720,8 @@ main()
                              "${OPTION_PREFIX}" \
                              "${OPTION_SELECTED_PREFIX}" \
                              "${OPTION_MODE}" \
-                             "${OPTIONS}"
+                             "${OPTIONS}" \
+                             "${OPTION_TIMEOUT}"
    i=$?
 
    if [ $i -le 128 ]

@@ -57,6 +57,7 @@ Flags:
    --select <row>         : pre-select another row than 0
    --selection-prefix <c> : set prefix for selected options ("> ")
    --sv-rc                : trust tput sv/rc, which seems to be broken often
+   --timeout <n>          : auto-select first option after n seconds
    --title <s>            : set string for initial prompt ("" to suppress)
    --visible-items <n>    : number of items to present at once (7)
    -ld                    : additional debug output

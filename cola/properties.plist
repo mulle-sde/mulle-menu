@@ -8,6 +8,6 @@
       reponame="mulle-menu";
       homepage="https://github.com/mulle-sde/mulle-menu";
       license="BSD-3-Clause";
-      version="0.5.1"
+      version="0.5.2"
    };
 }
